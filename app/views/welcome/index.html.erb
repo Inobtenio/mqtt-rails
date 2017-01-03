@@ -1,0 +1,62 @@
+<button style="margin-left: auto; margin-right: auto; display: block;">CHANGE!</button>
+<script type="text/javascript">
+	// Create a client instance
+	a = Math.random()
+	var r,g,b;
+	var client = new Paho.MQTT.Client("test.mosquitto.org", 8080, "clientId" + a);
+
+	// set callback handlers
+	client.onConnectionLost = onConnectionLost;
+	client.onMessageArrived = onMessageArrived;
+	client.onMessageDelivered = onMessageDelivered;
+	// connect the client
+	client.connect({onSuccess:onConnect});
+
+
+	// called when the client connects
+	function onConnect() {
+	  // Once a connection has been made, make a subscription and send a message.
+	  console.log("onConnect");
+	  client.subscribe("colors");
+	  // client.send(message);
+	}
+
+	// called when the client loses its connection
+	function onConnectionLost(responseObject) {
+	  if (responseObject.errorCode !== 0) {
+	    console.log("onConnectionLost:"+responseObject.errorMessage);
+	  }
+	  client.connect({onSuccess:onConnect});
+	}
+
+	// called when a message arrives
+	function onMessageArrived(message) {
+	  console.log("onMessageArrived:"+message.payloadString);
+	  $("body").css('background-color', "rgb(" + message.payloadString + ")");
+	}
+
+	function onMessageDelivered(object){
+		console.log("onMessageDelivered:"+object);
+	}
+
+	function toColor(rgb) {
+    $('body').css('background-color', rgb);
+	}
+
+	function randomValues(){
+		r = Math.round(Math.random()*255);
+		g = Math.round(Math.random()*255);
+		b = Math.round(Math.random()*255);
+	}
+
+	$("button").click(function(){
+		randomValues();
+		var rgb = r + "," + g + "," + b 
+		var rgbComplete = "rgb(" + rgb + ")"
+		toColor(rgb);
+		message = new Paho.MQTT.Message(rgb);
+	  message.destinationName = "colors";
+	  message.qos = 2;
+	  client.send(message)
+	})
+</script>
